@@ -1,0 +1,4 @@
+name: smartagent release action
+runs:
+  using: docker
+  image: Dockerfile
