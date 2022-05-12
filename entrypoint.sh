@@ -1,3 +1,3 @@
 #!/bin/sh
 go mod tidy
-go run release.go
+go run /release.go
