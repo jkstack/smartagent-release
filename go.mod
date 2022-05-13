@@ -3,6 +3,7 @@ module github.com/jkstack/smartagent-release
 go 1.18
 
 require (
+	github.com/gomarkdown/markdown v0.0.0-20220509074759-a57bf950ab8c
 	github.com/google/go-github v17.0.0+incompatible
 	github.com/lwch/runtime v0.0.0-20190520054850-8c97e19e0c6d
 	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5

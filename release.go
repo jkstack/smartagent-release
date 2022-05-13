@@ -4,12 +4,15 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
+	"github.com/gomarkdown/markdown"
+	"github.com/gomarkdown/markdown/parser"
 	"github.com/google/go-github/github"
 	"github.com/lwch/runtime"
 	"golang.org/x/oauth2"
@@ -42,26 +45,27 @@ func main() {
 	gcli := github.NewClient(ocli)
 
 	version := getVersion()
+	changelog := getChangeLog(version)
 
 	log.Printf("create release version=%s", version)
 
 	files, err := filepath.Glob("release/*")
 	runtime.Assert(err)
 
-	releaseID := create(gcli, owner, repo, version, "Only for test")
+	releaseID := createOrDrop(gcli, owner, repo, version, changelog)
 	for _, file := range files {
 		fi, err := os.Stat(file)
 		runtime.Assert(err)
-		if fi.IsDir() {
+		if !fi.IsDir() {
 			continue
 		}
 		upload(gcli, owner, repo, releaseID, file)
 	}
 }
 
-func create(cli *github.Client, owner, repo, version, body string) int64 {
-	log.Println("create release...")
-	branch := "release"
+func createOrDrop(cli *github.Client, owner, repo, version, body string) int64 {
+	log.Printf("create release %s...", version)
+	branch := "v" + version
 	version = "v" + version
 	var release github.RepositoryRelease
 	release.TagName = &branch
@@ -94,4 +98,12 @@ func getVersion() string {
 	cmd.Stdout = &buf
 	runtime.Assert(cmd.Run())
 	return strings.TrimSpace(buf.String())
+}
+
+func getChangeLog(version string) string {
+	data, err := ioutil.ReadFile("CHANGELOG.md")
+	runtime.Assert(err)
+
+	markdown.Parse(data, parser.New())
+	return ""
 }
