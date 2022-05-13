@@ -54,7 +54,7 @@ func main() {
 
 	log.Printf("create release version=%s", version)
 
-	files, err := filepath.Glob(filepath.Join("release", version))
+	files, err := filepath.Glob(filepath.Join("release", version, "*"))
 	runtime.Assert(err)
 
 	releaseID := createOrDrop(gcli, owner, repo, sha, version, changelog)
