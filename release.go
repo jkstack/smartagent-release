@@ -29,6 +29,11 @@ func main() {
 		fmt.Println("Missing GITHUB_REPOSITORY env")
 		os.Exit(1)
 	}
+	sha, ok := os.LookupEnv("GITHUB_SHA")
+	if !ok {
+		fmt.Println("Missing GITHUB_SHA env")
+		os.Exit(1)
+	}
 
 	tmp := strings.SplitN(repo, "/", 2)
 	if len(tmp) != 2 {
@@ -52,7 +57,7 @@ func main() {
 	files, err := filepath.Glob(filepath.Join("release", version))
 	runtime.Assert(err)
 
-	releaseID := createOrDrop(gcli, owner, repo, version, changelog)
+	releaseID := createOrDrop(gcli, owner, repo, sha, version, changelog)
 	for _, file := range files {
 		fi, err := os.Stat(file)
 		runtime.Assert(err)
@@ -63,11 +68,29 @@ func main() {
 	}
 }
 
-func createOrDrop(cli *github.Client, owner, repo, version, body string) int64 {
+func createOrDrop(cli *github.Client, owner, repo, sha, version, body string) int64 {
 	log.Printf("create release %s...", version)
+
 	branch := "v" + version
 	version = "v" + version
-	cli.Git.DeleteRef(context.Background(), owner, repo, "tags/"+branch)
+
+	cli.Git.DeleteRef(context.Background(), "jkstack", "smartagent", "tags/"+branch)
+	cli.Git.DeleteRef(context.Background(), "jkstack", "smartagent", "branches/"+branch)
+
+	msg := "auto create branch " + branch
+	t := "commit"
+	var tag github.Tag
+	tag.Tag = &version
+	tag.Message = &msg
+	tag.Object = &github.GitObject{
+		Type: &t,
+		SHA:  &sha,
+	}
+	tg, resp, err := cli.Git.CreateTag(context.Background(), owner, repo, &tag)
+	runtime.Assert(err)
+	defer resp.Body.Close()
+	log.Printf("created tag %s sha %s", tg.GetTag(), sha)
+
 	var release github.RepositoryRelease
 	release.TagName = &branch
 	release.Name = &version
