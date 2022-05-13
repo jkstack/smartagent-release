@@ -102,7 +102,7 @@ func createOrDrop(cli *github.Client, owner, repo, sha, version, body string) in
 		}
 	}
 
-	log.Printf("created tag %s sha %s", version, sha)
+	log.Printf("create tag %s sha %s...", version, sha)
 	msg := "auto create branch " + branch
 	t := "commit"
 	var tag github.Tag
