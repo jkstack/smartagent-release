@@ -67,7 +67,7 @@ func createOrDrop(cli *github.Client, owner, repo, version, body string) int64 {
 	log.Printf("create release %s...", version)
 	branch := "v" + version
 	version = "v" + version
-	cli.Git.DeleteRef(context.Background(), owner, repo, branch)
+	cli.Git.DeleteRef(context.Background(), owner, repo, "tags/"+branch)
 	var release github.RepositoryRelease
 	release.TagName = &branch
 	release.Name = &version
