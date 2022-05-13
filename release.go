@@ -74,8 +74,22 @@ func createOrDrop(cli *github.Client, owner, repo, sha, version, body string) in
 	branch := "v" + version
 	version = "v" + version
 
-	cli.Git.DeleteRef(context.Background(), "jkstack", "smartagent", "tags/"+branch)
-	cli.Git.DeleteRef(context.Background(), "jkstack", "smartagent", "branches/"+branch)
+	r, _ := cli.Git.DeleteRef(context.Background(), "jkstack", "smartagent", "tags/"+branch)
+	if r != nil {
+		defer r.Body.Close()
+	}
+	r, _ = cli.Git.DeleteRef(context.Background(), "jkstack", "smartagent", "branches/"+branch)
+	if r != nil {
+		defer r.Body.Close()
+	}
+	rel, rep, err := cli.Repositories.GetReleaseByTag(context.Background(), owner, repo, branch)
+	if err == nil {
+		defer rep.Body.Close()
+		r, _ := cli.Repositories.DeleteRelease(context.Background(), owner, repo, rel.GetID())
+		if r != nil {
+			defer r.Body.Close()
+		}
+	}
 
 	msg := "auto create branch " + branch
 	t := "commit"
