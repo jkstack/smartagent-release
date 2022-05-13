@@ -49,14 +49,14 @@ func main() {
 
 	log.Printf("create release version=%s", version)
 
-	files, err := filepath.Glob("release/*")
+	files, err := filepath.Glob(filepath.Join("release", version))
 	runtime.Assert(err)
 
 	releaseID := createOrDrop(gcli, owner, repo, version, changelog)
 	for _, file := range files {
 		fi, err := os.Stat(file)
 		runtime.Assert(err)
-		if !fi.IsDir() {
+		if fi.IsDir() {
 			continue
 		}
 		upload(gcli, owner, repo, releaseID, file)
