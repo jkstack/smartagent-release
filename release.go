@@ -82,7 +82,7 @@ func main() {
 		}
 	}
 
-	pack(".", version)
+	pack("release", version)
 	upload(gcli, owner, repo, releaseID, "v"+version+".tar.gz")
 }
 
