@@ -72,6 +72,7 @@ func main() {
 		}
 		upload(gcli, owner, repo, releaseID, file)
 	}
+	upload(gcli, owner, repo, releaseID, filepath.Join("release", "CHANGELOG.md"))
 }
 
 func createOrDrop(cli *github.Client, owner, repo, sha, version, body string) int64 {
