@@ -8,4 +8,4 @@ ADD go.mod \
 WORKDIR /build
 RUN go build -o /usr/bin/release release.go
 
-ENTRYPOINT /usr/bin/release
+ENTRYPOINT ["/usr/bin/release"]
