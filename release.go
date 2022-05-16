@@ -66,6 +66,8 @@ func main() {
 	version := getVersion()
 	changelog := getChangeLog(version)
 
+	pack("release", version)
+
 	log.Printf("create release version=%s", version)
 	releaseID := createOrDrop(gcli, owner, repo, sha, version, changelog)
 
@@ -81,8 +83,6 @@ func main() {
 			upload(gcli, owner, repo, releaseID, file)
 		}
 	}
-
-	pack("release", version)
 	upload(gcli, owner, repo, releaseID, "v"+version+".tar.gz")
 }
 
