@@ -177,6 +177,7 @@ func pack(dir, version string) {
 			return err
 		}
 		hdr.Name = strings.TrimPrefix(path, dir)
+		hdr.Name = strings.TrimPrefix(hdr.Name, "/")
 		log.Printf("added file %s", hdr.Name)
 		err = tw.WriteHeader(hdr)
 		if err != nil {
@@ -236,6 +237,7 @@ func getChangeLog(version string) string {
 			}
 			nodes = nodes[:0]
 			latest = ver
+			continue
 		}
 		nodes = append(nodes, node)
 	}
