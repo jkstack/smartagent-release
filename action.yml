@@ -1,4 +1,10 @@
 name: smartagent release action
+inputs:
+  plugin:
+    required: true
+    default: false
 runs:
   using: docker
   image: Dockerfile
+  args:
+    - -plugin=${{ inputs.plugin }}

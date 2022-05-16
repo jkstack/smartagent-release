@@ -1,10 +1,15 @@
 package main
 
 import (
+	"archive/tar"
 	"bytes"
+	"compress/gzip"
 	"context"
 	"errors"
+	"flag"
 	"fmt"
+	"io"
+	"io/fs"
 	"io/ioutil"
 	"log"
 	"os"
@@ -25,6 +30,9 @@ import (
 )
 
 func main() {
+	isPlugin := flag.Bool("plugin", false, "is project is plugin")
+	flag.Parse()
+
 	token, ok := os.LookupEnv("GITHUB_TOKEN")
 	if !ok {
 		fmt.Println("Missing GITHUB_TOKEN env")
@@ -59,20 +67,23 @@ func main() {
 	changelog := getChangeLog(version)
 
 	log.Printf("create release version=%s", version)
-
-	files, err := filepath.Glob(filepath.Join("release", version, "*"))
-	runtime.Assert(err)
-
 	releaseID := createOrDrop(gcli, owner, repo, sha, version, changelog)
-	for _, file := range files {
-		fi, err := os.Stat(file)
+
+	if !*isPlugin {
+		files, err := filepath.Glob(filepath.Join("release", version, "*"))
 		runtime.Assert(err)
-		if fi.IsDir() {
-			continue
+		for _, file := range files {
+			fi, err := os.Stat(file)
+			runtime.Assert(err)
+			if fi.IsDir() {
+				continue
+			}
+			upload(gcli, owner, repo, releaseID, file)
 		}
-		upload(gcli, owner, repo, releaseID, file)
 	}
-	upload(gcli, owner, repo, releaseID, filepath.Join("release", "CHANGELOG.md"))
+
+	pack(".", version)
+	upload(gcli, owner, repo, releaseID, "v"+version+".tar.gz")
 }
 
 func createOrDrop(cli *github.Client, owner, repo, sha, version, body string) int64 {
@@ -141,6 +152,45 @@ func upload(cli *github.Client, owner, repo string, id int64, dir string) {
 		context.Background(), owner, repo, id, &opt, f)
 	runtime.Assert(err)
 	defer rep.Body.Close()
+}
+
+func pack(dir, version string) {
+	log.Printf("packing for v%s.tar.gz...", version)
+	f, err := os.Create("v" + version + ".tar.gz")
+	runtime.Assert(err)
+	defer f.Close()
+
+	gw := gzip.NewWriter(f)
+	defer gw.Close()
+	tw := tar.NewWriter(gw)
+	defer tw.Close()
+
+	err = filepath.Walk(dir, func(path string, info fs.FileInfo, err error) error {
+		if path == "." || path == ".." {
+			return nil
+		}
+		if info.IsDir() {
+			return nil
+		}
+		hdr, err := tar.FileInfoHeader(info, "")
+		if err != nil {
+			return err
+		}
+		hdr.Name = strings.TrimPrefix(path, dir)
+		log.Printf("added file %s", hdr.Name)
+		err = tw.WriteHeader(hdr)
+		if err != nil {
+			return err
+		}
+		f, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		_, err = io.Copy(tw, f)
+		return err
+	})
+	runtime.Assert(err)
 }
 
 func getVersion() string {
