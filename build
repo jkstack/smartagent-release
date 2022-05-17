@@ -1,0 +1,2 @@
+#!/bin/sh
+docker build -t lwch/smartagent-build --build-arg GOPROXY=https://goproxy.cn,direct .

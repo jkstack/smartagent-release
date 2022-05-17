@@ -1,5 +1,8 @@
 FROM golang:latest
 
+ARG GOPROXY=
+ENV GOPROXY=${GOPROXY}
+
 ADD go.mod \
     go.sum \
     release.go \
