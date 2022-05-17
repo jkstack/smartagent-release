@@ -55,6 +55,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	log.Printf("repo=%s", repo)
+
 	owner, repo := tmp[0], tmp[1]
 
 	ac := oauth2.StaticTokenSource(&oauth2.Token{
