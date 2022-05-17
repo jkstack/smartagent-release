@@ -5,6 +5,6 @@ inputs:
     default: false
 runs:
   using: docker
-  image: docker://lwch/smartagent-build
+  image: docker://lwch/smartagent-release
   args:
     - -plugin=${{ inputs.plugin }}
