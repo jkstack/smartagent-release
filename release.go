@@ -84,8 +84,6 @@ func main() {
 }
 
 func createOrDrop(cli *github.Client, owner, repo, version, body string) int64 {
-	log.Printf("create release %s...", version)
-
 	branch := "v" + version
 	version = "v" + version
 
