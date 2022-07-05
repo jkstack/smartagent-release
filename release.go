@@ -17,7 +17,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/gomarkdown/markdown"
 	"github.com/gomarkdown/markdown/ast"
@@ -111,32 +110,17 @@ func createOrDrop(cli *github.Client, owner, repo, version, body string) int64 {
 }
 
 func upload(cli *github.Client, owner, repo string, id int64, dir string) {
-	run := func() error {
-		f, err := os.Open(dir)
-		runtime.Assert(err)
-		defer f.Close()
-		var opt github.UploadOptions
-		opt.Name = filepath.Base(dir)
-		var rep *github.Response
-		_, rep, err = cli.Repositories.UploadReleaseAsset(
-			context.Background(), owner, repo, id, &opt, f)
-		if err != nil {
-			return err
-		}
-		defer rep.Body.Close()
-		return nil
-	}
-	var err error
-	for i := 0; i < 5; i++ {
-		log.Printf("upload file %s for %d times...", dir, (i + 1))
-		err = run()
-		if err != nil {
-			log.Printf("ERROR: %v", err)
-			time.Sleep(5 * time.Second)
-			continue
-		}
-	}
+	log.Printf("upload file %s...", dir)
+	f, err := os.Open(dir)
 	runtime.Assert(err)
+	defer f.Close()
+	var opt github.UploadOptions
+	opt.Name = filepath.Base(dir)
+	var rep *github.Response
+	_, rep, err = cli.Repositories.UploadReleaseAsset(
+		context.Background(), owner, repo, id, &opt, f)
+	runtime.Assert(err)
+	defer rep.Body.Close()
 }
 
 func pack(dir, version string) {
