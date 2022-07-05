@@ -117,10 +117,16 @@ func upload(cli *github.Client, owner, repo string, id int64, dir string) {
 		defer f.Close()
 		var opt github.UploadOptions
 		opt.Name = filepath.Base(dir)
+		var asset *github.ReleaseAsset
 		var rep *github.Response
-		_, rep, err = cli.Repositories.UploadReleaseAsset(
+		asset, rep, err = cli.Repositories.UploadReleaseAsset(
 			context.Background(), owner, repo, id, &opt, f)
 		if err != nil {
+			rep, _ = cli.Repositories.DeleteReleaseAsset(
+				context.Background(), owner, repo, asset.GetID())
+			if rep != nil {
+				rep.Body.Close()
+			}
 			return err
 		}
 		defer rep.Body.Close()
