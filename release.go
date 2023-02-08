@@ -50,6 +50,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	fixSafeDir()
+
 	log.Printf("repo=%s", repo)
 
 	owner, repo := tmp[0], tmp[1]
@@ -81,6 +83,15 @@ func main() {
 		}
 	}
 	upload(gcli, owner, repo, releaseID, "v"+version+".tar.gz")
+}
+
+func fixSafeDir() {
+	dir, err := os.Getwd()
+	runtime.Assert(err)
+	cmd := exec.Command("git", "config", "--global", "--add", "safe.directory", dir)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	runtime.Assert(cmd.Run())
 }
 
 func createOrDrop(cli *github.Client, owner, repo, version, body string) int64 {
