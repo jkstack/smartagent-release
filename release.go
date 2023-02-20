@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gomarkdown/markdown"
 	"github.com/gomarkdown/markdown/ast"
@@ -28,6 +29,8 @@ import (
 	htmlmini "github.com/tdewolff/minify/v2/html"
 	"golang.org/x/oauth2"
 )
+
+const retry = 5
 
 func main() {
 	isPlugin := flag.Bool("plugin", false, "is project is plugin")
@@ -120,18 +123,58 @@ func createOrDrop(cli *github.Client, owner, repo, version, body string) int64 {
 	return ret.GetID()
 }
 
+func deleteIfExists(cli *github.Client, owner, repo string, id int64, name string) bool {
+	var opt github.ListOptions
+	opt.PerPage = 1000
+	assets, rep, err := cli.Repositories.ListReleaseAssets(context.Background(), owner, repo, id, &opt)
+	if err != nil {
+		return false
+	}
+	defer rep.Body.Close()
+	for _, asset := range assets {
+		if *asset.Name == name {
+			log.Printf("delete file %s...", name)
+			rep, err = cli.Repositories.DeleteReleaseAsset(context.Background(), owner, repo, asset.GetID())
+			if err != nil {
+				return false
+			}
+			defer rep.Body.Close()
+		}
+	}
+	return true
+}
+
 func upload(cli *github.Client, owner, repo string, id int64, dir string) {
 	log.Printf("upload file %s...", dir)
+	for i := 0; i < retry; i++ {
+		err := uploadFile(cli, owner, repo, id, dir)
+		if err == nil {
+			return
+		}
+		log.Printf("upload file %s failed: %v", dir, err)
+		deleteIfExists(cli, owner, repo, id, dir)
+		time.Sleep(time.Second)
+		continue
+	}
+	panic(fmt.Sprintf("can not upload file: %s", filepath.Base(dir)))
+}
+
+func uploadFile(cli *github.Client, owner, repo string, id int64, dir string) error {
 	f, err := os.Open(dir)
-	runtime.Assert(err)
+	if err != nil {
+		return err
+	}
 	defer f.Close()
 	var opt github.UploadOptions
 	opt.Name = filepath.Base(dir)
 	var rep *github.Response
 	_, rep, err = cli.Repositories.UploadReleaseAsset(
 		context.Background(), owner, repo, id, &opt, f)
-	runtime.Assert(err)
+	if err != nil {
+		return err
+	}
 	defer rep.Body.Close()
+	return nil
 }
 
 func pack(dir, version string) {
