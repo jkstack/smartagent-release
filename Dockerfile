@@ -13,6 +13,6 @@ FROM debian:stable-slim
 COPY --from=build /usr/bin/release /usr/bin/release
 
 RUN apt-get update && apt-get upgrade -y && \
-    apt-get install -y make ca-certificates
+    apt-get install -y make ca-certificates git
 
 ENTRYPOINT ["/usr/bin/release"]
