@@ -19,6 +19,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/aliyun/aliyun-oss-go-sdk/oss"
 	"github.com/gomarkdown/markdown"
 	"github.com/gomarkdown/markdown/ast"
 	"github.com/gomarkdown/markdown/html"
@@ -86,6 +87,8 @@ func main() {
 		}
 	}
 	upload(gcli, owner, repo, releaseID, "v"+version+".tar.gz")
+
+	uploadOSS(repo, "v"+version+".tar.gz")
 }
 
 func fixSafeDir() {
@@ -157,6 +160,23 @@ func upload(cli *github.Client, owner, repo string, id int64, dir string) {
 		continue
 	}
 	panic(fmt.Sprintf("can not upload file: %s", filepath.Base(dir)))
+}
+
+func uploadOSS(repo string, dir string) {
+	log.Printf("upload to oss...")
+	endpoint := os.Getenv("OSS_ENDPOINT")
+	key := os.Getenv("OSS_KEY")
+	secret := os.Getenv("OSS_SECRET")
+	bucket := os.Getenv("OSS_BUCKET")
+	if len(endpoint) == 0 || len(key) == 0 || len(secret) == 0 {
+		log.Println("no OSS_ENDPOINT or OSS_KEY or OSS_SECRET or OSS_BUCKET set, skiped")
+		return
+	}
+	cli, err := oss.New(endpoint, key, secret)
+	runtime.Assert(err)
+	bk, err := cli.Bucket(bucket)
+	runtime.Assert(err)
+	runtime.Assert(bk.PutObjectFromFile(filepath.Join(repo, filepath.Base(dir)), dir))
 }
 
 func uploadFile(cli *github.Client, owner, repo string, id int64, dir string) error {
