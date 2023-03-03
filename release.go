@@ -24,7 +24,7 @@ import (
 	"github.com/gomarkdown/markdown/ast"
 	"github.com/gomarkdown/markdown/html"
 	"github.com/gomarkdown/markdown/parser"
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v50/github"
 	"github.com/lwch/runtime"
 	"github.com/tdewolff/minify/v2"
 	htmlmini "github.com/tdewolff/minify/v2/html"
